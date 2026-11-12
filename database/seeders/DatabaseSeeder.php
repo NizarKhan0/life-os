@@ -29,6 +29,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             GoalSeeder::class,
             MeetingSeeder::class,
+            MoneySeeder::class,
         ]);
     }
 }

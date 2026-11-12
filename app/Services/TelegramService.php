@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\Budget;
 use App\Models\Goal;
 use App\Models\Meeting;
 use App\Models\Milestone;
@@ -151,6 +152,31 @@ class TelegramService
             $lines[] = '';
             $lines[] = '📝 '.e($meeting->description);
         }
+
+        return $this->sendMessage(implode("\n", $lines), $chatId);
+    }
+
+    /**
+     * Format and send a monthly Budget threshold alert to Telegram.
+     */
+    public function sendBudgetAlert(Budget $budget, ?string $chatId = null): bool
+    {
+        $spent = $budget->spentAmount();
+        $limit = (float) $budget->amount;
+        $progress = $budget->progressPercentage();
+        $categoryName = $budget->category->name;
+
+        $statusIcon = $progress >= 100.0 ? '🚨' : '⚠️';
+        $statusText = $progress >= 100.0 ? 'Melebihi Bajet!' : 'Hampir Had Bajet';
+
+        $lines = [
+            "{$statusIcon} <b>Peringatan Bajet Bulanan (LifeOS)</b>",
+            '',
+            '🗂 Kategori: <b>'.e($categoryName).'</b>',
+            '📅 Bulan: <code>'.e($budget->month_year).'</code>',
+            '💸 Belanja: <b>RM '.number_format($spent, 2).' / RM '.number_format($limit, 2).'</b>',
+            "📊 Penggunaan: <b>{$progress}% ({$statusText})</b>",
+        ];
 
         return $this->sendMessage(implode("\n", $lines), $chatId);
     }

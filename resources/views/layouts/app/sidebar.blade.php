@@ -21,6 +21,9 @@
                     <flux:sidebar.item icon="calendar" :href="route('meetings.index')" :current="request()->routeIs('meetings.*')" wire:navigate>
                         {{ __('Meetings') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="banknotes" :href="route('money.index')" :current="request()->routeIs('money.*')" wire:navigate>
+                        {{ __('Money & Budget') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 
