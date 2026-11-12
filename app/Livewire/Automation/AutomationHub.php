@@ -83,14 +83,21 @@ class AutomationHub extends Component
      */
     public function triggerArtisanCommand(string $command): void
     {
+        $briefingTime = (string) config('lifeos.schedules.briefing', '07:30');
+        $goalsTime = (string) config('lifeos.schedules.goals', '08:00');
+        $subsTime = (string) config('lifeos.schedules.subscriptions', '09:00');
+        $budgetTime = (string) config('lifeos.schedules.budgets', '20:00');
+        $tasksTime = (string) config('lifeos.schedules.tasks', '21:00');
+        $reviewsTime = (string) config('lifeos.schedules.reviews', '20:00');
+
         $allowedCommands = [
-            'lifeos:send-briefing' => 'Morning Briefing (07:30 AM)',
+            'lifeos:send-briefing' => "Morning Briefing ({$briefingTime})",
             'meetings:send-reminders' => 'Meeting Reminders (Every Minute)',
-            'goals:send-reminders' => 'Goal Reminders (08:00 AM)',
-            'subscriptions:check-due' => 'Subscription Alerts (09:00 AM)',
-            'money:check-budgets' => 'Budget Threshold Alerts (08:00 PM)',
-            'tasks:send-reminders' => 'Tasks & Habits Reminders (09:00 PM)',
-            'reviews:send-weekly-reminder' => 'Weekly Review Reminder (Sunday 08:00 PM)',
+            'goals:send-reminders' => "Goal Reminders ({$goalsTime})",
+            'subscriptions:check-due' => "Subscription Alerts ({$subsTime})",
+            'money:check-budgets' => "Budget Threshold Alerts ({$budgetTime})",
+            'tasks:send-reminders' => "Tasks & Habits Reminders ({$tasksTime})",
+            'reviews:send-weekly-reminder' => "Weekly Review Reminder (Sunday {$reviewsTime})",
         ];
 
         if (! array_key_exists($command, $allowedCommands)) {

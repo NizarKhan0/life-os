@@ -20,7 +20,7 @@
                     Good Morning, {{ auth()->user()->name }}! ☀️
                 </h1>
                 <p class="max-w-2xl text-xs sm:text-sm text-zinc-300">
-                    The automated Morning Briefing system is scheduled daily at <span class="font-semibold text-amber-300">07:30 AM (Asia/Kuala_Lumpur)</span>. You can also trigger an immediate test briefing to Telegram at any time.
+                    The automated Morning Briefing system is scheduled daily at <span class="font-semibold text-amber-300">{{ config('lifeos.schedules.briefing', '07:30') }} ({{ config('lifeos.timezone', 'Asia/Kuala_Lumpur') }})</span>. You can also trigger an immediate test briefing to Telegram at any time.
                 </p>
                 <div class="flex flex-wrap items-center gap-2 sm:gap-3 pt-1 text-xs">
                     @if ($summary['telegram_configured'])
@@ -178,14 +178,21 @@
 
                 <div class="mt-4 divide-y divide-zinc-100 dark:divide-zinc-800">
                     @php
+                        $briefingTime = config('lifeos.schedules.briefing', '07:30');
+                        $goalsTime = config('lifeos.schedules.goals', '08:00');
+                        $subsTime = config('lifeos.schedules.subscriptions', '09:00');
+                        $budgetTime = config('lifeos.schedules.budgets', '20:00');
+                        $tasksTime = config('lifeos.schedules.tasks', '21:00');
+                        $reviewsTime = config('lifeos.schedules.reviews', '20:00');
+
                         $schedules = [
                             ['cmd' => 'meetings:send-reminders', 'time' => 'Every Minute', 'label' => 'Meeting Reminders'],
-                            ['cmd' => 'lifeos:send-briefing', 'time' => 'Daily • 07:30 AM', 'label' => 'Morning Briefing Hub'],
-                            ['cmd' => 'goals:send-reminders', 'time' => 'Daily • 08:00 AM', 'label' => 'Goal Progress Alerts'],
-                            ['cmd' => 'subscriptions:check-due', 'time' => 'Daily • 09:00 AM', 'label' => 'Subscription Renewal Due Alerts'],
-                            ['cmd' => 'money:check-budgets', 'time' => 'Daily • 08:00 PM', 'label' => 'Monthly Budget Threshold Alerts'],
-                            ['cmd' => 'tasks:send-reminders', 'time' => 'Daily • 09:00 PM', 'label' => 'Tasks & Habits Daily Recap'],
-                            ['cmd' => 'reviews:send-weekly-reminder', 'time' => 'Sunday • 08:00 PM', 'label' => 'Weekly Review Reflection Prompt'],
+                            ['cmd' => 'lifeos:send-briefing', 'time' => "Daily • {$briefingTime}", 'label' => 'Morning Briefing Hub'],
+                            ['cmd' => 'goals:send-reminders', 'time' => "Daily • {$goalsTime}", 'label' => 'Goal Progress Alerts'],
+                            ['cmd' => 'subscriptions:check-due', 'time' => "Daily • {$subsTime}", 'label' => 'Subscription Renewal Due Alerts'],
+                            ['cmd' => 'money:check-budgets', 'time' => "Daily • {$budgetTime}", 'label' => 'Monthly Budget Threshold Alerts'],
+                            ['cmd' => 'tasks:send-reminders', 'time' => "Daily • {$tasksTime}", 'label' => 'Tasks & Habits Daily Recap'],
+                            ['cmd' => 'reviews:send-weekly-reminder', 'time' => "Sunday • {$reviewsTime}", 'label' => 'Weekly Review Reflection Prompt'],
                         ];
                     @endphp
 

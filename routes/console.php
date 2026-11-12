@@ -15,25 +15,25 @@ Schedule::command('meetings:send-reminders')
     ->withoutOverlapping();
 
 Schedule::command('lifeos:send-briefing')
-    ->dailyAt('07:30')
-    ->timezone('Asia/Kuala_Lumpur');
+    ->dailyAt((string) config('lifeos.schedules.briefing', '07:30'))
+    ->timezone((string) config('lifeos.timezone', 'Asia/Kuala_Lumpur'));
 
 Schedule::command('goals:send-reminders')
-    ->dailyAt('08:00')
-    ->timezone('Asia/Kuala_Lumpur');
+    ->dailyAt((string) config('lifeos.schedules.goals', '08:00'))
+    ->timezone((string) config('lifeos.timezone', 'Asia/Kuala_Lumpur'));
 
 Schedule::command('subscriptions:check-due')
-    ->dailyAt('09:00')
-    ->timezone('Asia/Kuala_Lumpur');
+    ->dailyAt((string) config('lifeos.schedules.subscriptions', '09:00'))
+    ->timezone((string) config('lifeos.timezone', 'Asia/Kuala_Lumpur'));
 
 Schedule::command('money:check-budgets')
-    ->dailyAt('20:00')
-    ->timezone('Asia/Kuala_Lumpur');
+    ->dailyAt((string) config('lifeos.schedules.budgets', '20:00'))
+    ->timezone((string) config('lifeos.timezone', 'Asia/Kuala_Lumpur'));
 
 Schedule::command('tasks:send-reminders')
-    ->dailyAt('21:00')
-    ->timezone('Asia/Kuala_Lumpur');
+    ->dailyAt((string) config('lifeos.schedules.tasks', '21:00'))
+    ->timezone((string) config('lifeos.timezone', 'Asia/Kuala_Lumpur'));
 
 Schedule::command('reviews:send-weekly-reminder')
-    ->weeklyOn(0, '20:00')
-    ->timezone('Asia/Kuala_Lumpur');
+    ->weeklyOn((int) config('lifeos.schedules.reviews_day', 0), (string) config('lifeos.schedules.reviews', '20:00'))
+    ->timezone((string) config('lifeos.timezone', 'Asia/Kuala_Lumpur'));
