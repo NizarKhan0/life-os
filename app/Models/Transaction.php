@@ -81,4 +81,3 @@ class Transaction extends Model
         return $this->belongsTo(Wallet::class, 'target_wallet_id');
     }
 }
-

@@ -101,4 +101,3 @@ class Wallet extends Model
         return round($starting + $income - $expense - $outgoingTransfer + $incomingTransfer, 2);
     }
 }
-

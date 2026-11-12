@@ -30,6 +30,7 @@ class DatabaseSeeder extends Seeder
             GoalSeeder::class,
             MeetingSeeder::class,
             MoneySeeder::class,
+            TaskHabitSeeder::class,
         ]);
     }
 }

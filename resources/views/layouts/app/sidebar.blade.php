@@ -24,6 +24,9 @@
                     <flux:sidebar.item icon="banknotes" :href="route('money.index')" :current="request()->routeIs('money.*')" wire:navigate>
                         {{ __('Money & Budget') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="check-circle" :href="route('tasks.index')" :current="request()->routeIs('tasks.*')" wire:navigate>
+                        {{ __('Tasks & Habits') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 

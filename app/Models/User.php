@@ -120,4 +120,24 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     {
         return $this->hasMany(Budget::class);
     }
+
+    /**
+     * Get the user's tasks.
+     *
+     * @return HasMany<Task, $this>
+     */
+    public function tasks(): HasMany
+    {
+        return $this->hasMany(Task::class);
+    }
+
+    /**
+     * Get the user's habits.
+     *
+     * @return HasMany<Habit, $this>
+     */
+    public function habits(): HasMany
+    {
+        return $this->hasMany(Habit::class);
+    }
 }

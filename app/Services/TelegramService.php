@@ -6,8 +6,11 @@ namespace App\Services;
 
 use App\Models\Budget;
 use App\Models\Goal;
+use App\Models\Habit;
 use App\Models\Meeting;
 use App\Models\Milestone;
+use App\Models\Task;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Throwable;
@@ -177,6 +180,47 @@ class TelegramService
             '💸 Belanja: <b>RM '.number_format($spent, 2).' / RM '.number_format($limit, 2).'</b>',
             "📊 Penggunaan: <b>{$progress}% ({$statusText})</b>",
         ];
+
+        return $this->sendMessage(implode("\n", $lines), $chatId);
+    }
+
+    /**
+     * Format and send a reminder for pending Tasks and uncompleted Habits.
+     *
+     * @param  Collection<int, Task>  $tasks
+     * @param  Collection<int, Habit>  $habits
+     */
+    public function sendTaskHabitReminder(Collection $tasks, Collection $habits, ?string $chatId = null): bool
+    {
+        $lines = [
+            '✅ <b>Peringatan Tasks & Habits (LifeOS)</b>',
+        ];
+
+        if ($tasks->isNotEmpty()) {
+            $lines[] = '';
+            $lines[] = "📌 <b>Tugasan Belum Selesai ({$tasks->count()}):</b>";
+
+            foreach ($tasks->take(5) as $task) {
+                $priorityIcon = match ($task->priority) {
+                    'urgent' => '🔴',
+                    'high' => '🟠',
+                    'medium' => '🔵',
+                    default => '⚪',
+                };
+                $due = $task->due_date ? ' ('.$task->due_date->format('d/m').')' : '';
+                $lines[] = "  {$priorityIcon} ".e($task->title).$due;
+            }
+        }
+
+        if ($habits->isNotEmpty()) {
+            $lines[] = '';
+            $lines[] = "🔥 <b>Habit Hari Ini Belum Ditanda ({$habits->count()}):</b>";
+
+            foreach ($habits as $habit) {
+                $streak = $habit->currentStreak();
+                $lines[] = '  • '.e($habit->name)." (🔥 {$streak} hari)";
+            }
+        }
 
         return $this->sendMessage(implode("\n", $lines), $chatId);
     }

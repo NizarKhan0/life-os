@@ -61,4 +61,3 @@ class CheckBudgetAlertsCommand extends Command
         return self::SUCCESS;
     }
 }
-

@@ -25,3 +25,7 @@ Schedule::command('goals:send-reminders')
 Schedule::command('money:check-budgets')
     ->dailyAt('20:00')
     ->timezone('Asia/Kuala_Lumpur');
+
+Schedule::command('tasks:send-reminders')
+    ->dailyAt('21:00')
+    ->timezone('Asia/Kuala_Lumpur');

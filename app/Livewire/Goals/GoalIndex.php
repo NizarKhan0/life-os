@@ -302,6 +302,8 @@ class GoalIndex extends Component
 
         $milestone->delete();
         unset($this->goals);
+
+        Flux::toast(variant: 'success', text: 'Milestone telah dipadam.');
     }
 
     /**
