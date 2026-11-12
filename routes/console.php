@@ -10,6 +10,10 @@ Artisan::command('inspire', function (): void {
     $this->comment(Inspiring::quote());
 })->purpose('Display an inspiring quote');
 
+Schedule::command('meetings:send-reminders')
+    ->everyMinute()
+    ->withoutOverlapping();
+
 Schedule::command('lifeos:send-briefing')
     ->dailyAt('07:30')
     ->timezone('Asia/Kuala_Lumpur');

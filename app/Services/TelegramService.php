@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\Goal;
+use App\Models\Meeting;
 use App\Models\Milestone;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -40,8 +41,8 @@ class TelegramService
         $targetChatId = $chatId ?? $this->defaultChatId;
 
         if (! $this->isConfigured($targetChatId)) {
-            Log::info('TelegramService: Credentials not configured. Skipping message dispatch.', [
-                'message_preview' => mb_substr($message, 0, 100),
+            Log::info('TelegramService: Credentials not configured. Message logged locally.', [
+                'message_preview' => mb_substr($message, 0, 160),
             ]);
 
             return false;
@@ -118,6 +119,37 @@ class TelegramService
             $lines[] = '';
             $lines[] = '📋 <b>Milestone Belum Selesai:</b>';
             $lines[] = $pendingMilestones;
+        }
+
+        return $this->sendMessage(implode("\n", $lines), $chatId);
+    }
+
+    /**
+     * Format and send a reminder for a scheduled Meeting.
+     */
+    public function sendMeetingReminder(Meeting $meeting, ?int $remindBeforeMinutes = null, ?string $chatId = null): bool
+    {
+        $startFormatted = $meeting->start_time->format('d M Y, h:i A');
+        $endFormatted = $meeting->end_time ? ' - '.$meeting->end_time->format('h:i A') : '';
+
+        $lines = [
+            '🔔 <b>Peringatan Mesyuarat (LifeOS)</b>',
+            '',
+            '📅 <b>'.e($meeting->title).'</b>',
+            "🕒 Masa: <b>{$startFormatted}{$endFormatted}</b>",
+        ];
+
+        if ($remindBeforeMinutes !== null) {
+            $lines[] = "⏰ Peringatan: <b>{$remindBeforeMinutes} minit sebelum bermula</b>";
+        }
+
+        if ($meeting->location_or_link !== null && $meeting->location_or_link !== '') {
+            $lines[] = '📍 Lokasi / Pautan: '.e($meeting->location_or_link);
+        }
+
+        if ($meeting->description !== null && $meeting->description !== '') {
+            $lines[] = '';
+            $lines[] = '📝 '.e($meeting->description);
         }
 
         return $this->sendMessage(implode("\n", $lines), $chatId);

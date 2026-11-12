@@ -70,4 +70,14 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     {
         return $this->hasMany(Goal::class);
     }
+
+    /**
+     * Get the user's meetings.
+     *
+     * @return HasMany<Meeting, $this>
+     */
+    public function meetings(): HasMany
+    {
+        return $this->hasMany(Meeting::class);
+    }
 }

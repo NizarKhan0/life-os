@@ -18,6 +18,9 @@
                     <flux:sidebar.item icon="layout-grid" :href="route('goals.index')" :current="request()->routeIs('goals.*')" wire:navigate>
                         {{ __('Goals & Milestones') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="calendar" :href="route('meetings.index')" :current="request()->routeIs('meetings.*')" wire:navigate>
+                        {{ __('Meetings') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 

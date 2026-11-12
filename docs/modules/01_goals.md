@@ -1,5 +1,5 @@
 # Modul 01: Goals & Milestones
-Rujuk `CLAUDE.md` dan `docs/ARCHITECTURE.md`. Bina **Modul 01: Goals & Milestones**:
+Rujuk `AGENT.md` dan `docs/ARCHITECTURE.md`. Bina **Modul 01: Goals & Milestones**:
 1. **Migrations:**
    - `goals`: `id`, `user_id` (cascade), `title`, `description` (nullable), `category` (default: 'personal'), `target_date` (nullable), `target_value` (decimal 15,2, nullable), `current_value` (decimal 15,2, default: 0), `unit` (nullable), `status` (default: 'in_progress'), `timestamps`, index `['user_id', 'status']`.
    - `milestones`: `id`, `goal_id` (cascade), `title`, `due_date` (nullable), `is_completed` (boolean, default: false), `completed_at` (dateTime, nullable), `timestamps`, index `['goal_id', 'is_completed']`.
