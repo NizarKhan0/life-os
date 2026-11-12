@@ -9,21 +9,28 @@ use App\Models\Milestone;
 use App\Services\TelegramService;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Title('Goals & Milestones — LifeOS')]
 class GoalIndex extends Component
 {
+    use WithPagination;
+
     public string $filterStatus = 'all';
 
     public string $filterCategory = 'all';
 
     public bool $showGoalModal = false;
+
+    public bool $showDeleteModal = false;
+
+    public ?int $deletingGoalId = null;
 
     public ?int $editingGoalId = null;
 
@@ -83,19 +90,29 @@ class GoalIndex extends Component
         }
     }
 
+    public function updatedFilterStatus(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterCategory(): void
+    {
+        $this->resetPage();
+    }
+
     /**
-     * @return Collection<int, Goal>
+     * @return LengthAwarePaginator<int, Goal>
      */
     #[Computed]
-    public function goals(): Collection
+    public function goals(): LengthAwarePaginator
     {
         return Goal::query()
             ->with(['milestones' => fn ($query) => $query->orderBy('is_completed')->orderBy('due_date')])
             ->where('user_id', Auth::id())
             ->when($this->filterStatus !== 'all', fn ($query) => $query->where('status', $this->filterStatus))
             ->when($this->filterCategory !== 'all', fn ($query) => $query->where('category', $this->filterCategory))
-            ->latest()
-            ->get();
+            ->latest('id')
+            ->paginate(10);
     }
 
     /**
@@ -176,7 +193,7 @@ class GoalIndex extends Component
             $goal->update($payload);
             $this->quickProgress[$goal->id] = (string) (float) $goal->current_value;
 
-            Flux::toast(variant: 'success', text: 'Matlamat berjaya dikemas kini.');
+            Flux::toast(variant: 'success', text: 'Goal updated successfully.');
         } else {
             $goal = Goal::query()->create([
                 ...$payload,
@@ -185,7 +202,7 @@ class GoalIndex extends Component
 
             $this->quickProgress[$goal->id] = (string) (float) $goal->current_value;
 
-            Flux::toast(variant: 'success', text: 'Matlamat baharu berjaya dicipta.');
+            Flux::toast(variant: 'success', text: 'New goal created successfully.');
         }
 
         unset($this->goals);
@@ -200,7 +217,7 @@ class GoalIndex extends Component
         $rawValue = $this->quickProgress[$goalId] ?? 0;
 
         if (! is_numeric($rawValue) || (float) $rawValue < 0) {
-            Flux::toast(variant: 'danger', text: 'Nilai kemajuan mestilah nombor positif.');
+            Flux::toast(variant: 'danger', text: 'Progress value must be a positive number.');
 
             return;
         }
@@ -226,7 +243,7 @@ class GoalIndex extends Component
         $this->quickProgress[$goal->id] = (string) $newValue;
         unset($this->goals);
 
-        Flux::toast(variant: 'success', text: 'Kemajuan matlamat dikemas kini.');
+        Flux::toast(variant: 'success', text: 'Goal progress updated.');
     }
 
     /**
@@ -288,7 +305,7 @@ class GoalIndex extends Component
 
         unset($this->goals);
 
-        Flux::toast(variant: 'success', text: 'Milestone ditambah.');
+        Flux::toast(variant: 'success', text: 'Milestone added successfully.');
     }
 
     /**
@@ -303,7 +320,33 @@ class GoalIndex extends Component
         $milestone->delete();
         unset($this->goals);
 
-        Flux::toast(variant: 'success', text: 'Milestone telah dipadam.');
+        Flux::toast(variant: 'success', text: 'Milestone deleted.');
+    }
+
+    public function confirmDeleteGoal(int $goalId): void
+    {
+        $this->deletingGoalId = $goalId;
+        $this->showDeleteModal = true;
+    }
+
+    public function executeDeleteGoal(): void
+    {
+        if ($this->deletingGoalId === null) {
+            return;
+        }
+
+        $goal = Goal::query()
+            ->where('user_id', Auth::id())
+            ->findOrFail($this->deletingGoalId);
+
+        $goalId = $goal->id;
+        $goal->delete();
+
+        unset($this->quickProgress[$goalId], $this->goals);
+        $this->deletingGoalId = null;
+        $this->showDeleteModal = false;
+
+        Flux::toast(variant: 'success', text: 'Goal deleted successfully.');
     }
 
     /**
@@ -311,14 +354,7 @@ class GoalIndex extends Component
      */
     public function deleteGoal(int $goalId): void
     {
-        $goal = Goal::query()
-            ->where('user_id', Auth::id())
-            ->findOrFail($goalId);
-
-        $goal->delete();
-        unset($this->quickProgress[$goalId], $this->goals);
-
-        Flux::toast(variant: 'success', text: 'Matlamat telah dipadam.');
+        $this->confirmDeleteGoal($goalId);
     }
 
     /**
@@ -332,9 +368,9 @@ class GoalIndex extends Component
             ->findOrFail($goalId);
 
         if ($telegramService->sendGoalReminder($goal)) {
-            Flux::toast(variant: 'success', text: 'Peringatan Telegram berjaya dihantar!');
+            Flux::toast(variant: 'success', text: 'Telegram reminder sent successfully!');
         } else {
-            Flux::toast(variant: 'warning', text: 'Telegram belum dikonfigurasi (TELEGRAM_BOT_TOKEN / CHAT_ID).');
+            Flux::toast(variant: 'warning', text: 'Telegram not configured (TELEGRAM_BOT_TOKEN / CHAT_ID).');
         }
     }
 

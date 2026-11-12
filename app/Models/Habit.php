@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
@@ -78,6 +79,64 @@ class Habit extends Model
         );
 
         return $todayLog !== null && $todayLog->count >= $target;
+    }
+
+    /**
+     * Check if the habit was completed on a specific date.
+     */
+    public function isCompletedOn(CarbonInterface $date): bool
+    {
+        $dateStr = $date->toDateString();
+        $target = max(1, $this->target_per_day);
+
+        $logs = $this->relationLoaded('logs')
+            ? $this->logs
+            : $this->logs()->get();
+
+        $log = $logs->first(
+            fn (HabitLog $l): bool => $l->logged_date->toDateString() === $dateStr
+        );
+
+        return $log !== null && $log->count >= $target;
+    }
+
+    /**
+     * Get completion history for the last N days (default 7 days ending today).
+     *
+     * @return array<int, array{date: string, day: string, day_short: string, is_today: bool, completed: bool}>
+     */
+    public function recentWeeklyHistory(int $days = 7): array
+    {
+        $target = max(1, $this->target_per_day);
+
+        $logs = $this->relationLoaded('logs')
+            ? $this->logs
+            : $this->logs()->get();
+
+        /** @var array<string, bool> $completedDates */
+        $completedDates = [];
+        foreach ($logs as $log) {
+            if ($log->count >= $target) {
+                $completedDates[$log->logged_date->toDateString()] = true;
+            }
+        }
+
+        $history = [];
+        $today = Carbon::today();
+
+        for ($i = $days - 1; $i >= 0; $i--) {
+            $dayCursor = $today->copy()->subDays($i);
+            $dateStr = $dayCursor->toDateString();
+            $history[] = [
+                'date' => $dateStr,
+                'day' => $dayCursor->format('D'),
+                'day_short' => substr($dayCursor->format('D'), 0, 1),
+                'is_today' => $i === 0,
+                'completed' => isset($completedDates[$dateStr]),
+            ];
+        }
+
+        return $history;
     }
 
     /**

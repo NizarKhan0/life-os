@@ -17,18 +17,26 @@ use App\Services\TelegramService;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 #[Title('Automation & Morning Briefing Hub')]
 class AutomationHub extends Component
 {
+    use WithPagination;
+
     public ?int $selectedLogId = null;
+
+    public bool $showDeleteModal = false;
+
+    public ?int $deletingLogId = null;
 
     /**
      * Send a manual test Morning Briefing to Telegram via BriefingService.
@@ -45,8 +53,8 @@ class AutomationHub extends Component
 
         if ($log->status === 'sent') {
             Flux::toast(
-                text: 'Laporan Morning Briefing berjaya dihantar terus ke Telegram anda!',
-                heading: 'Briefing Dihantar',
+                text: 'Morning Briefing report sent directly to your Telegram!',
+                heading: 'Briefing Sent',
                 variant: 'success',
             );
 
@@ -55,8 +63,8 @@ class AutomationHub extends Component
 
         if ($log->status === 'simulated') {
             Flux::toast(
-                text: 'Briefing dijana & direkodkan dalam log (Token Telegram belum ditetapkan dalam .env).',
-                heading: 'Simulasi Briefing Berjaya',
+                text: 'Briefing generated & recorded in log (Telegram token not configured in .env).',
+                heading: 'Briefing Simulation Recorded',
                 variant: 'warning',
             );
 
@@ -64,8 +72,8 @@ class AutomationHub extends Component
         }
 
         Flux::toast(
-            text: 'Gagal menghantar mesej ke Telegram API. Sila semak konfigurasi token & chat ID.',
-            heading: 'Ralat Telegram',
+            text: 'Failed to send message via Telegram API. Please check token & chat ID configuration.',
+            heading: 'Telegram Error',
             variant: 'danger',
         );
     }
@@ -77,12 +85,12 @@ class AutomationHub extends Component
     {
         $allowedCommands = [
             'lifeos:send-briefing' => 'Morning Briefing (07:30 AM)',
-            'meetings:send-reminders' => 'Meeting Reminders (Setiap Minit)',
+            'meetings:send-reminders' => 'Meeting Reminders (Every Minute)',
             'goals:send-reminders' => 'Goal Reminders (08:00 AM)',
             'subscriptions:check-due' => 'Subscription Alerts (09:00 AM)',
             'money:check-budgets' => 'Budget Threshold Alerts (08:00 PM)',
             'tasks:send-reminders' => 'Tasks & Habits Reminders (09:00 PM)',
-            'reviews:send-weekly-reminder' => 'Weekly Review Reminder (Ahad 08:00 PM)',
+            'reviews:send-weekly-reminder' => 'Weekly Review Reminder (Sunday 08:00 PM)',
         ];
 
         if (! array_key_exists($command, $allowedCommands)) {
@@ -103,7 +111,7 @@ class AutomationHub extends Component
                 'triggered_by' => 'manual',
                 'message_preview' => trim(Artisan::output()) !== ''
                     ? trim(Artisan::output())
-                    : "Command {$command} telah dijalankan secara manual.",
+                    : "Command {$command} was executed manually.",
                 'sent_at' => now(),
             ]);
         }
@@ -111,8 +119,8 @@ class AutomationHub extends Component
         unset($this->logs);
 
         Flux::toast(
-            text: "Command '{$allowedCommands[$command]}' selesai dijalankan.",
-            heading: 'Automasi Dijalankan',
+            text: "Command '{$allowedCommands[$command]}' completed successfully.",
+            heading: 'Automation Executed',
             variant: 'success',
         );
     }
@@ -125,29 +133,47 @@ class AutomationHub extends Component
         $this->selectedLogId = $logId;
     }
 
-    /**
-     * Delete an automation log entry.
-     */
-    public function deleteLog(int $logId): void
+    public function confirmDeleteLog(int $logId): void
     {
+        $this->deletingLogId = $logId;
+        $this->showDeleteModal = true;
+    }
+
+    public function executeDeleteLog(): void
+    {
+        if ($this->deletingLogId === null) {
+            return;
+        }
+
         $deleted = AutomationLog::query()
             ->where('user_id', Auth::id())
-            ->whereKey($logId)
+            ->whereKey($this->deletingLogId)
             ->delete();
 
         if ($deleted) {
-            if ($this->selectedLogId === $logId) {
+            if ($this->selectedLogId === $this->deletingLogId) {
                 $this->selectedLogId = null;
             }
 
             unset($this->logs);
 
             Flux::toast(
-                text: 'Rekod log automasi telah dipadamkan.',
-                heading: 'Log Dipadam',
+                text: 'Automation log record deleted.',
+                heading: 'Log Deleted',
                 variant: 'danger',
             );
         }
+
+        $this->deletingLogId = null;
+        $this->showDeleteModal = false;
+    }
+
+    /**
+     * Delete an automation log entry.
+     */
+    public function deleteLog(int $logId): void
+    {
+        $this->confirmDeleteLog($logId);
     }
 
     /**
@@ -209,17 +235,15 @@ class AutomationHub extends Component
     /**
      * Get recent automation logs for the current user.
      *
-     * @return Collection<int, AutomationLog>
+     * @return LengthAwarePaginator<int, AutomationLog>
      */
     #[Computed]
-    public function logs(): Collection
+    public function logs(): LengthAwarePaginator
     {
         return AutomationLog::query()
             ->where('user_id', Auth::id())
-            ->orderByDesc('sent_at')
-            ->orderByDesc('id')
-            ->limit(12)
-            ->get();
+            ->latest('id')
+            ->paginate(10);
     }
 
     public function render(): View
@@ -227,4 +251,3 @@ class AutomationHub extends Component
         return view('livewire.automation.automation-hub');
     }
 }
-

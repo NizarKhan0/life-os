@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property int $user_id
  * @property string $name
  * @property string $type
+ * @property string|null $icon
  * @property numeric-string|float $starting_balance
  * @property string $currency
  * @property Carbon|null $created_at
@@ -28,6 +29,7 @@ use Illuminate\Support\Carbon;
     'user_id',
     'name',
     'type',
+    'icon',
     'starting_balance',
     'currency',
 ])]
@@ -41,6 +43,22 @@ class Wallet extends Model
         return [
             'starting_balance' => 'decimal:2',
         ];
+    }
+
+    /**
+     * Get the display icon for this wallet with fallback to type default.
+     */
+    public function displayIcon(): string
+    {
+        if (! empty($this->icon)) {
+            return $this->icon;
+        }
+
+        return match ($this->type) {
+            'bank' => '🏦',
+            'ewallet' => '📱',
+            default => '💵',
+        };
     }
 
     /**

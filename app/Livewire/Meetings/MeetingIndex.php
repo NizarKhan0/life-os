@@ -8,19 +8,26 @@ use App\Models\Meeting;
 use App\Services\TelegramService;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Title('Meetings & Time Management — LifeOS')]
 class MeetingIndex extends Component
 {
+    use WithPagination;
+
     public string $activeTab = 'upcoming';
 
     public bool $showMeetingModal = false;
+
+    public bool $showDeleteModal = false;
+
+    public ?int $deletingMeetingId = null;
 
     public ?int $editingMeetingId = null;
 
@@ -39,10 +46,10 @@ class MeetingIndex extends Component
     public int $remind_before_minutes = 15;
 
     /**
-     * @return Collection<int, Meeting>
+     * @return LengthAwarePaginator<int, Meeting>
      */
     #[Computed]
-    public function meetings(): Collection
+    public function meetings(): LengthAwarePaginator
     {
         $now = Carbon::now();
 
@@ -52,9 +59,9 @@ class MeetingIndex extends Component
             ->when(
                 $this->activeTab === 'upcoming',
                 fn ($query) => $query->where('start_time', '>=', $now)->orderBy('start_time'),
-                fn ($query) => $query->where('start_time', '<', $now)->orderByDesc('start_time')
+                fn ($query) => $query->where('start_time', '<', $now)->latest('id')
             )
-            ->get();
+            ->paginate(10);
     }
 
     #[Computed]
@@ -79,6 +86,7 @@ class MeetingIndex extends Component
     {
         if (in_array($tab, ['upcoming', 'past'], true)) {
             $this->activeTab = $tab;
+            $this->resetPage();
             unset($this->meetings);
         }
     }
@@ -162,7 +170,7 @@ class MeetingIndex extends Component
                 ]);
             }
 
-            Flux::toast(variant: 'success', text: 'Mesyuarat berjaya dikemas kini.');
+            Flux::toast(variant: 'success', text: 'Meeting updated successfully.');
         } else {
             $meeting = Meeting::query()->create([
                 ...$payload,
@@ -175,24 +183,41 @@ class MeetingIndex extends Component
                 'is_sent' => false,
             ]);
 
-            Flux::toast(variant: 'success', text: 'Mesyuarat baharu berjaya dijadualkan.');
+            Flux::toast(variant: 'success', text: 'New meeting scheduled successfully.');
         }
 
         unset($this->meetings, $this->upcomingCount, $this->pastCount);
         $this->closeMeetingModal();
     }
 
-    public function deleteMeeting(int $meetingId): void
+    public function confirmDeleteMeeting(int $meetingId): void
     {
+        $this->deletingMeetingId = $meetingId;
+        $this->showDeleteModal = true;
+    }
+
+    public function executeDeleteMeeting(): void
+    {
+        if ($this->deletingMeetingId === null) {
+            return;
+        }
+
         $meeting = Meeting::query()
             ->where('user_id', Auth::id())
-            ->findOrFail($meetingId);
+            ->findOrFail($this->deletingMeetingId);
 
         $meeting->delete();
+        $this->deletingMeetingId = null;
+        $this->showDeleteModal = false;
 
         unset($this->meetings, $this->upcomingCount, $this->pastCount);
 
-        Flux::toast(variant: 'success', text: 'Mesyuarat telah dipadam.');
+        Flux::toast(variant: 'success', text: 'Meeting deleted successfully.');
+    }
+
+    public function deleteMeeting(int $meetingId): void
+    {
+        $this->confirmDeleteMeeting($meetingId);
     }
 
     public function markCompleted(int $meetingId): void
@@ -234,9 +259,9 @@ class MeetingIndex extends Component
             unset($this->meetings);
 
             if ($sent) {
-                Flux::toast(variant: 'success', text: 'Test Telegram Alert berjaya dihantar ke Telegram!');
+                Flux::toast(variant: 'success', text: 'Test alert sent to Telegram successfully!');
             } else {
-                Flux::toast(variant: 'warning', text: 'Simulasi berjaya (🔔 Sent). Tetapkan TELEGRAM_BOT_TOKEN & CHAT_ID dalam .env untuk mesej sebenar.');
+                Flux::toast(variant: 'warning', text: 'Simulation successful (🔔 Sent). Set TELEGRAM_BOT_TOKEN & CHAT_ID in .env for live messages.');
             }
 
             return;
@@ -247,9 +272,9 @@ class MeetingIndex extends Component
         );
 
         if ($sent) {
-            Flux::toast(variant: 'success', text: 'Test Telegram Alert berjaya dihantar!');
+            Flux::toast(variant: 'success', text: 'Test alert sent to Telegram successfully!');
         } else {
-            Flux::toast(variant: 'warning', text: 'Sila tetapkan TELEGRAM_BOT_TOKEN dan TELEGRAM_DEFAULT_CHAT_ID di dalam .env.');
+            Flux::toast(variant: 'warning', text: 'Please set TELEGRAM_BOT_TOKEN and TELEGRAM_DEFAULT_CHAT_ID in .env.');
         }
     }
 

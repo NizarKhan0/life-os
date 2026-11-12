@@ -11,15 +11,19 @@ use App\Services\TelegramService;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Title('Tasks & Habits Tracker — LifeOS')]
 class TaskHabitIndex extends Component
 {
+    use WithPagination;
+
     public string $taskFilter = 'today'; // 'today' | 'important' | 'all'
 
     // Quick Add Task State (Press Enter)
@@ -34,6 +38,12 @@ class TaskHabitIndex extends Component
     // Edit Task Modal State
     public bool $showTaskModal = false;
 
+    public bool $showDeleteModal = false;
+
+    public ?int $deletingId = null;
+
+    public string $deletingType = 'task';
+
     public ?int $editingTaskId = null;
 
     public string $taskTitle = '';
@@ -46,6 +56,8 @@ class TaskHabitIndex extends Component
 
     // Habit Modal State
     public bool $showHabitModal = false;
+
+    public ?int $editingHabitId = null;
 
     public string $habitName = '';
 
@@ -61,10 +73,10 @@ class TaskHabitIndex extends Component
     }
 
     /**
-     * @return Collection<int, Task>
+     * @return LengthAwarePaginator<int, Task>
      */
     #[Computed]
-    public function tasks(): Collection
+    public function tasks(): LengthAwarePaginator
     {
         $today = Carbon::today();
 
@@ -81,10 +93,8 @@ class TaskHabitIndex extends Component
                 $query->whereIn('priority', ['high', 'urgent']);
             })
             ->orderByRaw("CASE WHEN status = 'completed' THEN 1 ELSE 0 END")
-            ->orderByRaw("CASE priority WHEN 'urgent' THEN 1 WHEN 'high' THEN 2 WHEN 'medium' THEN 3 ELSE 4 END")
-            ->orderBy('due_date')
             ->latest('id')
-            ->get();
+            ->paginate(10);
     }
 
     /**
@@ -105,6 +115,7 @@ class TaskHabitIndex extends Component
     {
         if (in_array($filter, ['today', 'important', 'all'], true)) {
             $this->taskFilter = $filter;
+            $this->resetPage();
             unset($this->tasks);
         }
     }
@@ -142,7 +153,7 @@ class TaskHabitIndex extends Component
         $this->quickTaskDescription = '';
         unset($this->tasks);
 
-        Flux::toast(variant: 'success', text: 'Tugasan baharu ditambah.');
+        Flux::toast(variant: 'success', text: 'New task added successfully.');
     }
 
     public function editTask(int $taskId): void
@@ -189,7 +200,7 @@ class TaskHabitIndex extends Component
         $this->editingTaskId = null;
         unset($this->tasks);
 
-        Flux::toast(variant: 'success', text: 'Tugasan berjaya dikemas kini.');
+        Flux::toast(variant: 'success', text: 'Task updated successfully.');
     }
 
     /**
@@ -211,22 +222,55 @@ class TaskHabitIndex extends Component
         unset($this->tasks);
 
         if ($isCompleting) {
-            Flux::toast(variant: 'success', text: 'Tugasan telah diselesaikan.');
+            Flux::toast(variant: 'success', text: 'Task marked as completed.');
         } else {
-            Flux::toast(variant: 'warning', text: 'Tugasan dibuka semula.');
+            Flux::toast(variant: 'warning', text: 'Task reopened.');
         }
+    }
+
+    public function confirmDeleteTask(int $taskId): void
+    {
+        $this->deletingId = $taskId;
+        $this->deletingType = 'task';
+        $this->showDeleteModal = true;
+    }
+
+    public function confirmDeleteHabit(int $habitId): void
+    {
+        $this->deletingId = $habitId;
+        $this->deletingType = 'habit';
+        $this->showDeleteModal = true;
+    }
+
+    public function executeDelete(): void
+    {
+        if ($this->deletingId === null) {
+            return;
+        }
+
+        if ($this->deletingType === 'task') {
+            $task = Task::query()
+                ->where('user_id', Auth::id())
+                ->findOrFail($this->deletingId);
+            $task->delete();
+            unset($this->tasks);
+            Flux::toast(variant: 'success', text: 'Task deleted successfully.');
+        } else {
+            $habit = Habit::query()
+                ->where('user_id', Auth::id())
+                ->findOrFail($this->deletingId);
+            $habit->delete();
+            unset($this->habits);
+            Flux::toast(variant: 'success', text: 'Habit deleted successfully.');
+        }
+
+        $this->deletingId = null;
+        $this->showDeleteModal = false;
     }
 
     public function deleteTask(int $taskId): void
     {
-        $task = Task::query()
-            ->where('user_id', Auth::id())
-            ->findOrFail($taskId);
-
-        $task->delete();
-        unset($this->tasks);
-
-        Flux::toast(variant: 'success', text: 'Tugasan telah dipadam.');
+        $this->confirmDeleteTask($taskId);
     }
 
     /**
@@ -248,14 +292,14 @@ class TaskHabitIndex extends Component
 
         if ($existingLog !== null) {
             $existingLog->delete();
-            Flux::toast(variant: 'warning', text: 'Tanda habit hari ini dibatalkan.');
+            Flux::toast(variant: 'warning', text: 'Habit check-in undone.');
         } else {
             HabitLog::query()->create([
                 'habit_id' => $habit->id,
                 'logged_date' => $todayStr,
                 'count' => max(1, $habit->target_per_day),
             ]);
-            Flux::toast(variant: 'success', text: 'Habit hari ini telah diselesaikan! 🔥');
+            Flux::toast(variant: 'success', text: 'Habit completed for today! 🔥');
         }
 
         unset($this->habits);
@@ -264,10 +308,26 @@ class TaskHabitIndex extends Component
     public function openHabitModal(): void
     {
         $this->resetValidation();
+        $this->editingHabitId = null;
         $this->habitName = '';
         $this->habitFrequency = 'daily';
         $this->habitTargetPerDay = 1;
         $this->habitColor = 'emerald';
+        $this->showHabitModal = true;
+    }
+
+    public function editHabit(int $habitId): void
+    {
+        $this->resetValidation();
+        $habit = Habit::query()
+            ->where('user_id', Auth::id())
+            ->findOrFail($habitId);
+
+        $this->editingHabitId = $habit->id;
+        $this->habitName = $habit->name;
+        $this->habitFrequency = $habit->frequency;
+        $this->habitTargetPerDay = $habit->target_per_day;
+        $this->habitColor = $habit->color;
         $this->showHabitModal = true;
     }
 
@@ -280,42 +340,57 @@ class TaskHabitIndex extends Component
             'habitColor' => ['required', 'string', 'in:emerald,sky,violet,amber,rose'],
         ]);
 
-        Habit::query()->create([
-            'user_id' => (int) Auth::id(),
-            'name' => $validated['habitName'],
-            'frequency' => $validated['habitFrequency'],
-            'target_per_day' => (int) $validated['habitTargetPerDay'],
-            'color' => $validated['habitColor'],
-            'is_active' => true,
-        ]);
+        if ($this->editingHabitId !== null) {
+            $habit = Habit::query()
+                ->where('user_id', Auth::id())
+                ->findOrFail($this->editingHabitId);
+
+            $habit->update([
+                'name' => $validated['habitName'],
+                'frequency' => $validated['habitFrequency'],
+                'target_per_day' => (int) $validated['habitTargetPerDay'],
+                'color' => $validated['habitColor'],
+            ]);
+
+            $this->editingHabitId = null;
+            $toastText = 'Habit updated successfully.';
+        } else {
+            Habit::query()->create([
+                'user_id' => (int) Auth::id(),
+                'name' => $validated['habitName'],
+                'frequency' => $validated['habitFrequency'],
+                'target_per_day' => (int) $validated['habitTargetPerDay'],
+                'color' => $validated['habitColor'],
+                'is_active' => true,
+            ]);
+            $toastText = 'New habit created successfully.';
+        }
 
         unset($this->habits);
         $this->showHabitModal = false;
 
-        Flux::toast(variant: 'success', text: 'Habit baharu berjaya dicipta.');
+        Flux::toast(variant: 'success', text: $toastText);
     }
 
     public function deleteHabit(int $habitId): void
     {
-        $habit = Habit::query()
-            ->where('user_id', Auth::id())
-            ->findOrFail($habitId);
-
-        $habit->delete();
-        unset($this->habits);
-
-        Flux::toast(variant: 'success', text: 'Habit telah dipadam.');
+        $this->confirmDeleteHabit($habitId);
     }
 
     public function sendTelegramSummary(TelegramService $telegramService): void
     {
-        $pendingTasks = $this->tasks()->where('status', '!=', 'completed')->values();
+        $pendingTasks = Task::query()
+            ->where('user_id', Auth::id())
+            ->where('status', '!=', 'completed')
+            ->where('status', '!=', 'archived')
+            ->latest('id')
+            ->get();
         $uncompletedHabits = $this->habits()->filter(fn (Habit $h): bool => ! $h->isCompletedToday())->values();
 
         if ($telegramService->sendTaskHabitReminder($pendingTasks, $uncompletedHabits)) {
-            Flux::toast(variant: 'success', text: 'Ringkasan Tasks & Habits dihantar ke Telegram!');
+            Flux::toast(variant: 'success', text: 'Tasks & Habits summary sent to Telegram!');
         } else {
-            Flux::toast(variant: 'warning', text: 'Simulasi berjaya (Tetapkan TELEGRAM_BOT_TOKEN dalam .env untuk mesej sebenar).');
+            Flux::toast(variant: 'warning', text: 'Simulation recorded (Set TELEGRAM_BOT_TOKEN in .env for live messages).');
         }
     }
 

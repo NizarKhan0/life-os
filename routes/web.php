@@ -1,6 +1,7 @@
 <?php
 
 use App\Livewire\Automation\AutomationHub;
+use App\Livewire\Dashboard;
 use App\Livewire\Goals\GoalIndex;
 use App\Livewire\Meetings\MeetingIndex;
 use App\Livewire\Money\MoneyIndex;
@@ -9,10 +10,10 @@ use App\Livewire\Subscriptions\SubscriptionIndex;
 use App\Livewire\Tasks\TaskHabitIndex;
 use Illuminate\Support\Facades\Route;
 
-Route::view('/', 'welcome')->name('home');
+Route::view('/', 'landing')->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::view('dashboard', 'dashboard')->name('dashboard');
+    Route::livewire('dashboard', Dashboard::class)->name('dashboard');
     Route::livewire('automation', AutomationHub::class)->name('automation.index');
     Route::livewire('goals', GoalIndex::class)->name('goals.index');
     Route::livewire('meetings', MeetingIndex::class)->name('meetings.index');

@@ -208,7 +208,7 @@ class TelegramService
                     'medium' => '🔵',
                     default => '⚪',
                 };
-                $due = $task->due_date ? ' ('.$task->due_date->format('d/m').')' : '';
+                $due = $task->due_date ? ' ('.$task->due_date->format('d/m/Y').')' : '';
                 $lines[] = "  {$priorityIcon} ".e($task->title).$due;
             }
         }

@@ -6,7 +6,7 @@
                 📅 Meetings & Time Management
             </h1>
             <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                Urus jadual mesyuarat dan peringatan automatik Telegram Bot API setiap minit.
+                Manage meeting schedules and continuous per-minute Telegram alerts.
             </p>
         </div>
 
@@ -40,7 +40,7 @@
             wire:click="setTab('upcoming')"
             class="inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition {{ $activeTab === 'upcoming' ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
         >
-            <span> akan datang (Upcoming)</span>
+            <span>Upcoming Meetings</span>
             <span class="rounded-full px-2 py-0.5 text-[11px] {{ $activeTab === 'upcoming' ? 'bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900' : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300' }}">
                 {{ $this->upcomingCount }}
             </span>
@@ -51,7 +51,7 @@
             wire:click="setTab('past')"
             class="inline-flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2 text-xs font-semibold transition {{ $activeTab === 'past' ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900' : 'text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800' }}"
         >
-            <span>Lepas (Past Meetings)</span>
+            <span>Past Meetings</span>
             <span class="rounded-full px-2 py-0.5 text-[11px] {{ $activeTab === 'past' ? 'bg-white/20 text-white dark:bg-zinc-900/20 dark:text-zinc-900' : 'bg-zinc-200 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300' }}">
                 {{ $this->pastCount }}
             </span>
@@ -65,10 +65,10 @@
                 📅
             </div>
             <h3 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                Tiada mesyuarat {{ $activeTab === 'upcoming' ? 'akan datang' : 'lepas' }}
+                No {{ $activeTab === 'upcoming' ? 'upcoming' : 'past' }} meetings found
             </h3>
             <p class="mt-1 max-w-sm text-xs text-zinc-500 dark:text-zinc-400">
-                Jadualkan mesyuarat baharu dan terima peringatan automatik di Telegram sebelum ia bermula.
+                Schedule a meeting to receive automated reminder alerts in Telegram before it starts.
             </p>
             <button
                 type="button"
@@ -105,7 +105,7 @@
                                 @foreach ($meeting->reminders as $reminder)
                                     @if ($reminder->is_sent)
                                         <span
-                                            title="Dihantar pada {{ $reminder->sent_at?->format('d/m/Y h:i A') }}"
+                                            title="Sent at {{ $reminder->sent_at?->format('d/m/Y h:i A') }}"
                                             class="inline-flex items-center gap-1 rounded-md bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-500/20 dark:text-emerald-300"
                                         >
                                             🔔 Sent ({{ $reminder->remind_before_minutes }}m)
@@ -122,7 +122,7 @@
                                 <button
                                     type="button"
                                     wire:click="testTelegramAlert({{ $meeting->id }})"
-                                    title="Test Telegram Alert untuk mesyuarat ini"
+                                    title="Test Telegram alert for this meeting"
                                     class="inline-flex cursor-pointer items-center gap-1 rounded-lg border border-sky-200 bg-sky-50/70 px-2 py-1 text-[11px] font-semibold text-sky-700 transition hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/50 dark:text-sky-300"
                                 >
                                     🔔 Test Alert
@@ -130,7 +130,7 @@
                                 <button
                                     type="button"
                                     wire:click="editMeeting({{ $meeting->id }})"
-                                    title="Edit Mesyuarat"
+                                    title="Edit Meeting"
                                     class="cursor-pointer rounded-lg p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                                 >
                                     <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
@@ -139,9 +139,8 @@
                                 </button>
                                 <button
                                     type="button"
-                                    wire:click="deleteMeeting({{ $meeting->id }})"
-                                    wire:confirm="Adakah anda pasti mahu memadam mesyuarat ini?"
-                                    title="Padam Mesyuarat"
+                                    wire:click="confirmDeleteMeeting({{ $meeting->id }})"
+                                    title="Delete Meeting"
                                     class="cursor-pointer rounded-lg p-1.5 text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
                                 >
                                     <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
@@ -194,6 +193,12 @@
                 </div>
             @endforeach
         </div>
+
+        @if ($this->meetings->hasPages())
+            <div class="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                {{ $this->meetings->links() }}
+            </div>
+        @endif
     @endif
 
     {{-- Modal Add / Edit Meeting --}}
@@ -202,7 +207,7 @@
             <div class="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-zinc-800">
                     <h3 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                        {{ $editingMeetingId ? 'Kemaskini Mesyuarat' : 'Jadualkan Mesyuarat Baharu' }}
+                        {{ $editingMeetingId ? 'Update Meeting' : 'Schedule New Meeting' }}
                     </h3>
                     <button
                         type="button"
@@ -215,22 +220,22 @@
 
                 <form wire:submit="saveMeeting" class="mt-4 space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Tajuk Mesyuarat *</label>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Meeting Title *</label>
                         <input
                             type="text"
                             wire:model="title"
-                            placeholder="Contoh: Sprint Planning Suku Keempat"
+                            placeholder="e.g. Q4 Sprint Planning Sync"
                             class="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                         />
                         @error('title') <span class="mt-1 block text-xs text-rose-500">{{ $message }}</span> @enderror
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Lokasi atau Pautan (Google Meet / Zoom / Bilik)</label>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Location or URL (Google Meet / Zoom / Room)</label>
                         <input
                             type="text"
                             wire:model="location_or_link"
-                            placeholder="https://meet.google.com/... atau Bilik Mesyuarat Utama"
+                            placeholder="https://meet.google.com/... or Main Conference Room"
                             class="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                         />
                         @error('location_or_link') <span class="mt-1 block text-xs text-rose-500">{{ $message }}</span> @enderror
@@ -238,7 +243,7 @@
 
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Masa Mula *</label>
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Start Time *</label>
                             <input
                                 type="datetime-local"
                                 wire:model="start_time"
@@ -248,7 +253,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Masa Tamat (Pilihan)</label>
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">End Time (Optional)</label>
                             <input
                                 type="datetime-local"
                                 wire:model="end_time"
@@ -260,17 +265,17 @@
 
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Peringatan Telegram Sebelum</label>
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Telegram Reminder Before</label>
                             <select
                                 wire:model="remind_before_minutes"
                                 class="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                             >
-                                <option value="5">5 minit sebelum</option>
-                                <option value="10">10 minit sebelum</option>
-                                <option value="15">15 minit sebelum (Lalai)</option>
-                                <option value="30">30 minit sebelum</option>
-                                <option value="60">1 jam sebelum</option>
-                                <option value="120">2 jam sebelum</option>
+                                <option value="5">5 minutes before</option>
+                                <option value="10">10 minutes before</option>
+                                <option value="15">15 minutes before (Default)</option>
+                                <option value="30">30 minutes before</option>
+                                <option value="60">1 hour before</option>
+                                <option value="120">2 hours before</option>
                             </select>
                         </div>
 
@@ -280,19 +285,19 @@
                                 wire:model="status"
                                 class="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                             >
-                                <option value="scheduled">Dijadualkan (Scheduled)</option>
-                                <option value="completed">Selesai (Completed)</option>
-                                <option value="cancelled">Dibatalkan (Cancelled)</option>
+                                <option value="scheduled">Scheduled</option>
+                                <option value="completed">Completed</option>
+                                <option value="cancelled">Cancelled</option>
                             </select>
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Agenda / Catatan</label>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Agenda / Notes</label>
                         <textarea
                             wire:model="description"
                             rows="2"
-                            placeholder="Senarai agenda ringkas mesyuarat..."
+                            placeholder="Brief agenda items or talking points..."
                             class="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                         ></textarea>
                     </div>
@@ -303,18 +308,39 @@
                             wire:click="closeMeetingModal"
                             class="cursor-pointer rounded-xl border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                         >
-                            Batal
+                            Cancel
                         </button>
                         <button
                             type="submit"
                             class="cursor-pointer rounded-xl bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
                         >
-                            {{ $editingMeetingId ? 'Simpan Perubahan' : 'Simpan Mesyuarat' }}
+                            {{ $editingMeetingId ? 'Save Changes' : 'Schedule Meeting' }}
                         </button>
                     </div>
                 </form>
             </div>
         </div>
     @endif
-</div>
 
+    {{-- Flux Confirmation Delete Modal --}}
+    <flux:modal wire:model.self="showDeleteModal" class="max-w-md">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Delete Meeting</flux:heading>
+                <flux:subheading>
+                    Are you sure you want to cancel and delete this meeting session? This action cannot be undone.
+                </flux:subheading>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <flux:modal.close>
+                    <flux:button variant="filled">Cancel</flux:button>
+                </flux:modal.close>
+
+                <flux:button variant="danger" wire:click="executeDeleteMeeting">
+                    Delete
+                </flux:button>
+            </div>
+        </div>
+    </flux:modal>
+</div>

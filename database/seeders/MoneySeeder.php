@@ -29,6 +29,7 @@ class MoneySeeder extends Seeder
             ['user_id' => $user->id, 'name' => 'Maybank'],
             [
                 'type' => 'bank',
+                'icon' => '🏦',
                 'starting_balance' => 3500.00,
                 'currency' => 'MYR',
             ]
@@ -38,6 +39,7 @@ class MoneySeeder extends Seeder
             ['user_id' => $user->id, 'name' => 'TNG eWallet'],
             [
                 'type' => 'ewallet',
+                'icon' => '📱',
                 'starting_balance' => 250.00,
                 'currency' => 'MYR',
             ]
@@ -47,6 +49,7 @@ class MoneySeeder extends Seeder
             ['user_id' => $user->id, 'name' => 'Tunai'],
             [
                 'type' => 'cash',
+                'icon' => '💵',
                 'starting_balance' => 150.00,
                 'currency' => 'MYR',
             ]

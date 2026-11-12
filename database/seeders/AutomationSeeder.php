@@ -59,4 +59,3 @@ class AutomationSeeder extends Seeder
         }
     }
 }
-

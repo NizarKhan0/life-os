@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('type')->default('bank')->index();
+            $table->string('icon', 10)->nullable();
             $table->decimal('starting_balance', 15, 2)->default(0);
             $table->string('currency', 10)->default('MYR');
             $table->timestamps();

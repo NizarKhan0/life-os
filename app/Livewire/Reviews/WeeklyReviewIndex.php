@@ -11,17 +11,23 @@ use App\Services\WeeklyReviewService;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Title('Weekly Review & Brain Dump — LifeOS')]
 class WeeklyReviewIndex extends Component
 {
+    use WithPagination;
+
     // Brain Dump Quick Bar
     public string $dumpContent = '';
+
+    public ?int $editingDumpId = null;
 
     public bool $showProcessedDumps = false;
 
@@ -68,23 +74,38 @@ class WeeklyReviewIndex extends Component
     }
 
     /**
-     * @return Collection<int, WeeklyReview>
+     * @return LengthAwarePaginator<int, WeeklyReview>
      */
     #[Computed]
-    public function pastReviews(): Collection
+    public function pastReviews(): LengthAwarePaginator
     {
         return WeeklyReview::query()
             ->where('user_id', Auth::id())
             ->whereDate('week_start_date', '!=', $this->weekStartDate)
-            ->orderByDesc('week_start_date')
-            ->limit(6)
-            ->get();
+            ->latest('id')
+            ->paginate(10);
     }
 
     #[Computed]
     public function isCurrentWeek(): bool
     {
         return $this->weekStartDate === app(WeeklyReviewService::class)->weekStart()->toDateString();
+    }
+
+    public function editDump(int $dumpId): void
+    {
+        $dump = BrainDump::query()
+            ->where('user_id', Auth::id())
+            ->findOrFail($dumpId);
+
+        $this->editingDumpId = $dump->id;
+        $this->dumpContent = $dump->content;
+    }
+
+    public function cancelEditDump(): void
+    {
+        $this->editingDumpId = null;
+        $this->dumpContent = '';
     }
 
     /**
@@ -102,16 +123,27 @@ class WeeklyReviewIndex extends Component
             'dumpContent' => ['required', 'string', 'max:2000'],
         ]);
 
-        BrainDump::query()->create([
-            'user_id' => (int) Auth::id(),
-            'content' => $content,
-            'is_processed' => false,
-        ]);
+        if ($this->editingDumpId !== null) {
+            $dump = BrainDump::query()
+                ->where('user_id', Auth::id())
+                ->findOrFail($this->editingDumpId);
+
+            $dump->update(['content' => $content]);
+            $this->editingDumpId = null;
+            $toastText = 'Brain dump note updated.';
+        } else {
+            BrainDump::query()->create([
+                'user_id' => (int) Auth::id(),
+                'content' => $content,
+                'is_processed' => false,
+            ]);
+            $toastText = 'Brain dump note saved.';
+        }
 
         $this->dumpContent = '';
         unset($this->brainDumps);
 
-        Flux::toast(variant: 'success', text: 'Nota Brain Dump disimpan.');
+        Flux::toast(variant: 'success', text: $toastText);
     }
 
     public function toggleDumpProcessed(int $dumpId): void
@@ -127,7 +159,7 @@ class WeeklyReviewIndex extends Component
 
         Flux::toast(
             variant: $newState ? 'success' : 'warning',
-            text: $newState ? 'Nota ditanda sebagai telah diproses.' : 'Nota dibuka semula.'
+            text: $newState ? 'Note marked as processed.' : 'Note reopened.'
         );
     }
 
@@ -140,7 +172,7 @@ class WeeklyReviewIndex extends Component
         $dump->delete();
         unset($this->brainDumps);
 
-        Flux::toast(variant: 'success', text: 'Nota Brain Dump telah dipadam.');
+        Flux::toast(variant: 'success', text: 'Brain dump note deleted.');
     }
 
     public function previousWeek(): void
@@ -194,7 +226,7 @@ class WeeklyReviewIndex extends Component
 
         unset($this->pastReviews);
 
-        Flux::toast(variant: 'success', text: 'Refleksi mingguan berjaya disimpan.');
+        Flux::toast(variant: 'success', text: 'Weekly review saved successfully.');
     }
 
     public function sendTelegramReminder(TelegramService $telegramService): void
@@ -205,9 +237,9 @@ class WeeklyReviewIndex extends Component
             ->count();
 
         if ($telegramService->sendWeeklyReviewReminder($this->snapshot(), $unprocessed)) {
-            Flux::toast(variant: 'success', text: 'Snapshot mingguan dihantar ke Telegram!');
+            Flux::toast(variant: 'success', text: 'Weekly snapshot sent to Telegram!');
         } else {
-            Flux::toast(variant: 'warning', text: 'Simulasi direkodkan dalam log (Tetapkan TELEGRAM_BOT_TOKEN dalam .env).');
+            Flux::toast(variant: 'warning', text: 'Simulation recorded in log (Set TELEGRAM_BOT_TOKEN in .env).');
         }
     }
 

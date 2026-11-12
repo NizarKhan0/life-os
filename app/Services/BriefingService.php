@@ -143,7 +143,7 @@ class BriefingService
                     'medium' => '🔵 [MEDIUM]',
                     default => '⚪ [LOW]',
                 };
-                $dueBadge = $task->due_date !== null ? ' <i>(Due: '.$task->due_date->format('d M').')</i>' : '';
+                $dueBadge = $task->due_date !== null ? ' <i>(Tarikh: '.$task->due_date->format('d/m/Y').')</i>' : '';
                 $lines[] = "  • {$priorityIcon} ".e($task->title).$dueBadge;
             }
         }
@@ -204,4 +204,3 @@ class BriefingService
         ]);
     }
 }
-

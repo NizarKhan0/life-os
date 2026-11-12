@@ -6,7 +6,7 @@
                 🎯 Goals & Milestones
             </h1>
             <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                Jejak sasaran kewangan, peribadi, dan pencapaian langkah demi langkah secara reaktif.
+                Track financial targets, personal achievements, and step-by-step milestones reactively.
             </p>
         </div>
 
@@ -18,19 +18,19 @@
             <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
-            Matlamat Baharu
+            New Goal
         </button>
     </div>
 
     {{-- Filters --}}
-    <div class="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-3 dark:border-zinc-700/80 dark:bg-zinc-900/60">
-        <div class="flex flex-wrap items-center gap-1.5">
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-2xl border border-zinc-200 bg-zinc-50/70 p-3 dark:border-zinc-700/80 dark:bg-zinc-900/60">
+        <div class="flex flex-wrap items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0">
             @php
                 $statuses = [
-                    'all' => 'Semua Status',
-                    'in_progress' => 'Sedang Berjalan',
-                    'completed' => 'Selesai',
-                    'paused' => 'Ditangguh',
+                    'all' => 'All Status',
+                    'in_progress' => 'In Progress',
+                    'completed' => 'Completed',
+                    'paused' => 'Paused',
                 ];
             @endphp
             @foreach ($statuses as $key => $label)
@@ -45,18 +45,18 @@
         </div>
 
         <div class="flex items-center gap-2">
-            <label for="filterCategory" class="text-xs font-medium text-zinc-500 dark:text-zinc-400">Kategori:</label>
+            <label for="filterCategory" class="text-xs font-medium text-zinc-500 dark:text-zinc-400 shrink-0">Category:</label>
             <select
                 id="filterCategory"
                 wire:model.live="filterCategory"
-                class="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+                class="w-full sm:w-auto rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-800 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
             >
-                <option value="all">Semua Kategori</option>
-                <option value="personal">Peribadi (Personal)</option>
-                <option value="financial">Kewangan (Financial)</option>
-                <option value="career">Kerjaya (Career)</option>
-                <option value="health">Kesihatan (Health)</option>
-                <option value="spiritual">Kerohanian (Spiritual)</option>
+                <option value="all">All Categories</option>
+                <option value="personal">Personal</option>
+                <option value="financial">Financial</option>
+                <option value="career">Career</option>
+                <option value="health">Health</option>
+                <option value="spiritual">Spiritual</option>
             </select>
         </div>
     </div>
@@ -67,16 +67,16 @@
             <div class="mb-3 flex size-12 items-center justify-center rounded-full bg-zinc-200/70 text-xl dark:bg-zinc-800">
                 🎯
             </div>
-            <h3 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">Tiada matlamat ditemui</h3>
+            <h3 class="text-base font-semibold text-zinc-900 dark:text-zinc-100">No goals found</h3>
             <p class="mt-1 max-w-sm text-xs text-zinc-500 dark:text-zinc-400">
-                Mulakan langkah pertama dengan mencipta matlamat kewangan atau peribadi anda hari ini.
+                Start your journey by setting your first financial or personal goal today.
             </p>
             <button
                 type="button"
                 wire:click="openCreateModal"
                 class="mt-4 cursor-pointer rounded-xl bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
             >
-                + Cipta Matlamat Pertama
+                + Create First Goal
             </button>
         </div>
     @else
@@ -101,9 +101,9 @@
                     };
 
                     $statusLabel = match ($goal->status) {
-                        'completed' => 'Selesai',
-                        'paused' => 'Ditangguh',
-                        default => 'Aktif',
+                        'completed' => 'Completed',
+                        'paused' => 'Paused',
+                        default => 'In Progress',
                     };
                 @endphp
 
@@ -127,7 +127,7 @@
                                 <button
                                     type="button"
                                     wire:click="sendReminder({{ $goal->id }})"
-                                    title="Hantar Peringatan Telegram"
+                                    title="Send Telegram Alert"
                                     class="cursor-pointer rounded-lg p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-sky-500 dark:hover:bg-zinc-800"
                                 >
                                     <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
@@ -137,7 +137,7 @@
                                 <button
                                     type="button"
                                     wire:click="editGoal({{ $goal->id }})"
-                                    title="Edit Matlamat"
+                                    title="Edit Goal"
                                     class="cursor-pointer rounded-lg p-1.5 text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-700 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                                 >
                                     <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
@@ -146,9 +146,8 @@
                                 </button>
                                 <button
                                     type="button"
-                                    wire:click="deleteGoal({{ $goal->id }})"
-                                    wire:confirm="Adakah anda pasti mahu memadam matlamat ini?"
-                                    title="Padam Matlamat"
+                                    wire:click="confirmDeleteGoal({{ $goal->id }})"
+                                    title="Delete Goal"
                                     class="cursor-pointer rounded-lg p-1.5 text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950/40"
                                 >
                                     <svg class="size-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
@@ -171,14 +170,14 @@
                         {{-- Target Date & Days Remaining --}}
                         @if ($goal->target_date)
                             <div class="mt-3 flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-                                <span>📅 Sasaran: {{ $goal->target_date->format('d M Y') }}</span>
+                                <span>📅 Target: {{ $goal->target_date->format('d M Y') }}</span>
                                 <span class="font-medium {{ $daysRemaining !== null && $daysRemaining < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-zinc-700 dark:text-zinc-300' }}">
                                     @if ($daysRemaining < 0)
-                                        Lewat {{ abs($daysRemaining) }} hari
+                                        Overdue by {{ abs($daysRemaining) }} days
                                     @elseif ($daysRemaining === 0)
-                                        Hari ini!
+                                        Due today!
                                     @else
-                                        {{ $daysRemaining }} hari lagi
+                                        {{ $daysRemaining }} days remaining
                                     @endif
                                 </span>
                             </div>
@@ -192,7 +191,7 @@
                                         {{ $goal->unit ? $goal->unit.' ' : '' }}{{ number_format((float) $goal->current_value, 2) }}
                                         / {{ number_format((float) $goal->target_value, 2) }}
                                     @else
-                                        Kemajuan Milestone
+                                        Milestone Progress
                                     @endif
                                 </span>
                                 <span class="font-bold text-zinc-900 dark:text-white">{{ number_format($progress, 1) }}%</span>
@@ -217,7 +216,7 @@
                                         step="0.01"
                                         min="0"
                                         wire:model="quickProgress.{{ $goal->id }}"
-                                        placeholder="Nilai semasa"
+                                        placeholder="Current value"
                                         class="w-full rounded-lg border border-zinc-200 bg-zinc-50 px-2.5 py-1.5 text-xs text-zinc-900 focus:border-zinc-400 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-100"
                                     />
                                 </div>
@@ -225,7 +224,7 @@
                                     type="submit"
                                     class="cursor-pointer rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
                                 >
-                                    Kemas Kini
+                                    Update
                                 </button>
                             </form>
                         @endif
@@ -266,7 +265,7 @@
                                                 type="button"
                                                 wire:click="deleteMilestone({{ $milestone->id }})"
                                                 class="invisible cursor-pointer text-zinc-400 hover:text-rose-500 group-hover:visible"
-                                                title="Padam milestone"
+                                                title="Delete milestone"
                                             >
                                                 &times;
                                             </button>
@@ -274,7 +273,7 @@
                                     </li>
                                 @empty
                                     <li class="py-1 text-xs italic text-zinc-400 dark:text-zinc-500">
-                                        Tiada milestone lagi.
+                                        No milestones yet.
                                     </li>
                                 @endforelse
                             </ul>
@@ -287,14 +286,14 @@
                                 <input
                                     type="text"
                                     wire:model="newMilestoneTitle.{{ $goal->id }}"
-                                    placeholder="+ Tambah milestone..."
+                                    placeholder="+ Add milestone..."
                                     class="flex-1 rounded-lg border border-zinc-200 bg-transparent px-2.5 py-1 text-xs text-zinc-800 placeholder-zinc-400 focus:border-zinc-400 focus:outline-hidden dark:border-zinc-700 dark:text-zinc-200"
                                 />
                                 <button
                                     type="submit"
                                     class="cursor-pointer rounded-lg border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                                 >
-                                    Tambah
+                                    Add
                                 </button>
                             </form>
                         </div>
@@ -302,6 +301,12 @@
                 </div>
             @endforeach
         </div>
+
+        @if ($this->goals->hasPages())
+            <div class="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
+                {{ $this->goals->links() }}
+            </div>
+        @endif
     @endif
 
     {{-- Modal Create / Edit Goal --}}
@@ -310,7 +315,7 @@
             <div class="w-full max-w-lg rounded-2xl border border-zinc-200 bg-white p-6 shadow-xl dark:border-zinc-700 dark:bg-zinc-900">
                 <div class="flex items-center justify-between border-b border-zinc-100 pb-3 dark:border-zinc-800">
                     <h3 class="text-lg font-bold text-zinc-900 dark:text-zinc-100">
-                        {{ $editingGoalId ? 'Kemaskini Matlamat' : 'Cipta Matlamat Baharu' }}
+                        {{ $editingGoalId ? 'Update Goal' : 'Create New Goal' }}
                     </h3>
                     <button
                         type="button"
@@ -323,22 +328,22 @@
 
                 <form wire:submit="saveGoal" class="mt-4 space-y-4">
                     <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Tajuk Matlamat *</label>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Goal Title *</label>
                         <input
                             type="text"
                             wire:model="title"
-                            placeholder="Contoh: Dana Kecemasan RM 10,000"
+                            placeholder="e.g. Emergency Fund RM 10,000"
                             class="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                         />
                         @error('title') <span class="mt-1 block text-xs text-rose-500">{{ $message }}</span> @enderror
                     </div>
 
                     <div>
-                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Penerangan</label>
+                        <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Description</label>
                         <textarea
                             wire:model="description"
                             rows="2"
-                            placeholder="Huraian ringkas mengapa matlamat ini penting..."
+                            placeholder="Brief context on why this goal matters..."
                             class="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                         ></textarea>
                         @error('description') <span class="mt-1 block text-xs text-rose-500">{{ $message }}</span> @enderror
@@ -346,21 +351,21 @@
 
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Kategori</label>
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Category</label>
                             <select
                                 wire:model="category"
                                 class="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                             >
-                                <option value="personal">Peribadi (Personal)</option>
-                                <option value="financial">Kewangan (Financial)</option>
-                                <option value="career">Kerjaya (Career)</option>
-                                <option value="health">Kesihatan (Health)</option>
-                                <option value="spiritual">Kerohanian (Spiritual)</option>
+                                <option value="personal">Personal</option>
+                                <option value="financial">Financial</option>
+                                <option value="career">Career</option>
+                                <option value="health">Health</option>
+                                <option value="spiritual">Spiritual</option>
                             </select>
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Tarikh Sasaran</label>
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Target Date</label>
                             <input
                                 type="date"
                                 wire:model="target_date"
@@ -371,7 +376,7 @@
 
                     <div class="grid grid-cols-1 gap-4 sm:grid-cols-3">
                         <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Nilai Sasaran (Pilihan)</label>
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Target Value (Optional)</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -383,7 +388,7 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Nilai Semasa</label>
+                            <label class="block text-xs font-semibold text-zinc-700 dark:text-zinc-300">Current Value</label>
                             <input
                                 type="number"
                                 step="0.01"
@@ -399,7 +404,7 @@
                             <input
                                 type="text"
                                 wire:model="unit"
-                                placeholder="RM / km / buku"
+                                placeholder="RM / km / books"
                                 class="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                             />
                         </div>
@@ -411,9 +416,9 @@
                             wire:model="status"
                             class="mt-1 w-full rounded-xl border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 focus:border-zinc-500 focus:outline-hidden dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-100"
                         >
-                            <option value="in_progress">Sedang Berjalan (In Progress)</option>
-                            <option value="completed">Selesai (Completed)</option>
-                            <option value="paused">Ditangguh (Paused)</option>
+                            <option value="in_progress">In Progress</option>
+                            <option value="completed">Completed</option>
+                            <option value="paused">Paused</option>
                         </select>
                     </div>
 
@@ -423,18 +428,39 @@
                             wire:click="closeGoalModal"
                             class="cursor-pointer rounded-xl border border-zinc-300 px-4 py-2 text-xs font-semibold text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
                         >
-                            Batal
+                            Cancel
                         </button>
                         <button
                             type="submit"
                             class="cursor-pointer rounded-xl bg-zinc-900 px-4 py-2 text-xs font-semibold text-white hover:bg-zinc-800 dark:bg-white dark:text-zinc-900 dark:hover:bg-zinc-200"
                         >
-                            {{ $editingGoalId ? 'Simpan Perubahan' : 'Cipta Matlamat' }}
+                            {{ $editingGoalId ? 'Save Changes' : 'Create Goal' }}
                         </button>
                     </div>
                 </form>
             </div>
         </div>
     @endif
-</div>
 
+    {{-- Flux Confirmation Delete Modal --}}
+    <flux:modal wire:model.self="showDeleteModal" class="max-w-md">
+        <div class="space-y-6">
+            <div>
+                <flux:heading size="lg">Delete Goal</flux:heading>
+                <flux:subheading>
+                    Are you sure you want to delete this goal and all associated milestones? This action cannot be undone.
+                </flux:subheading>
+            </div>
+
+            <div class="flex justify-end gap-2">
+                <flux:modal.close>
+                    <flux:button variant="filled">Cancel</flux:button>
+                </flux:modal.close>
+
+                <flux:button variant="danger" wire:click="executeDeleteGoal">
+                    Delete
+                </flux:button>
+            </div>
+        </div>
+    </flux:modal>
+</div>

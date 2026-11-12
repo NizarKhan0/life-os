@@ -10,21 +10,29 @@ use App\Services\TelegramService;
 use Flux\Flux;
 use Illuminate\Contracts\View\View;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Computed;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Title('Subscriptions & Commitments Vault — LifeOS')]
 class SubscriptionIndex extends Component
 {
+    use WithPagination;
+
     public string $filterCategory = 'all';
 
     public string $filterStatus = 'active';
 
     // Modal Form State
     public bool $showSubscriptionModal = false;
+
+    public bool $showDeleteModal = false;
+
+    public ?int $deletingSubscriptionId = null;
 
     public ?int $editingSubscriptionId = null;
 
@@ -51,11 +59,21 @@ class SubscriptionIndex extends Component
         $this->next_billing_date = Carbon::today()->addMonth()->toDateString();
     }
 
+    public function updatedFilterCategory(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterStatus(): void
+    {
+        $this->resetPage();
+    }
+
     /**
-     * @return Collection<int, Subscription>
+     * @return LengthAwarePaginator<int, Subscription>
      */
     #[Computed]
-    public function subscriptions(): Collection
+    public function subscriptions(): LengthAwarePaginator
     {
         return Subscription::query()
             ->with('wallet')
@@ -63,9 +81,8 @@ class SubscriptionIndex extends Component
             ->when($this->filterCategory !== 'all', fn ($query) => $query->where('category', $this->filterCategory))
             ->when($this->filterStatus === 'active', fn ($query) => $query->where('is_active', true))
             ->when($this->filterStatus === 'inactive', fn ($query) => $query->where('is_active', false))
-            ->orderBy('is_active', 'desc')
-            ->orderBy('next_billing_date')
-            ->get();
+            ->latest('id')
+            ->paginate(10);
     }
 
     /**
@@ -177,13 +194,13 @@ class SubscriptionIndex extends Component
                 ->findOrFail($this->editingSubscriptionId);
 
             $subscription->update($payload);
-            Flux::toast(variant: 'success', text: 'Komitmen berjaya dikemas kini.');
+            Flux::toast(variant: 'success', text: 'Commitment updated successfully.');
         } else {
             Subscription::query()->create([
                 ...$payload,
                 'user_id' => (int) Auth::id(),
             ]);
-            Flux::toast(variant: 'success', text: 'Komitmen baharu berjaya ditambah.');
+            Flux::toast(variant: 'success', text: 'New commitment added successfully.');
         }
 
         $this->refreshComputedProperties();
@@ -211,7 +228,7 @@ class SubscriptionIndex extends Component
 
         Flux::toast(
             variant: 'success',
-            text: "Tarikh bil {$subscription->name} dilanjutkan ke ".$nextDate->format('d M Y').'.'
+            text: "Billing date for {$subscription->name} advanced to ".$nextDate->format('d M Y').'.'
         );
     }
 
@@ -234,20 +251,32 @@ class SubscriptionIndex extends Component
 
         Flux::toast(
             variant: $newState ? 'success' : 'warning',
-            text: $newState ? 'Langganan telah diaktifkan.' : 'Langganan telah dihentikan sementara.'
+            text: $newState ? 'Subscription activated.' : 'Subscription paused.'
         );
     }
 
-    public function deleteSubscription(int $subscriptionId): void
+    public function confirmDeleteSubscription(int $subscriptionId): void
     {
+        $this->deletingSubscriptionId = $subscriptionId;
+        $this->showDeleteModal = true;
+    }
+
+    public function executeDeleteSubscription(): void
+    {
+        if ($this->deletingSubscriptionId === null) {
+            return;
+        }
+
         $subscription = Subscription::query()
             ->where('user_id', Auth::id())
-            ->findOrFail($subscriptionId);
+            ->findOrFail($this->deletingSubscriptionId);
 
         $subscription->delete();
+        $this->deletingSubscriptionId = null;
+        $this->showDeleteModal = false;
         $this->refreshComputedProperties();
 
-        Flux::toast(variant: 'success', text: 'Komitmen telah dipadam.');
+        Flux::toast(variant: 'success', text: 'Commitment deleted successfully.');
     }
 
     public function sendTelegramAlert(int $subscriptionId, TelegramService $telegramService): void
@@ -258,9 +287,9 @@ class SubscriptionIndex extends Component
             ->findOrFail($subscriptionId);
 
         if ($telegramService->sendSubscriptionDueAlert($subscription)) {
-            Flux::toast(variant: 'success', text: 'Peringatan komitmen dihantar ke Telegram!');
+            Flux::toast(variant: 'success', text: 'Commitment alert sent to Telegram!');
         } else {
-            Flux::toast(variant: 'warning', text: 'Simulasi berjaya direkodkan dalam log (Tetapkan TELEGRAM_BOT_TOKEN dalam .env).');
+            Flux::toast(variant: 'warning', text: 'Simulation recorded in log (Set TELEGRAM_BOT_TOKEN in .env).');
         }
     }
 
