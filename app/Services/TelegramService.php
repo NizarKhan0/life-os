@@ -9,6 +9,7 @@ use App\Models\Goal;
 use App\Models\Habit;
 use App\Models\Meeting;
 use App\Models\Milestone;
+use App\Models\Subscription;
 use App\Models\Task;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Http;
@@ -220,6 +221,43 @@ class TelegramService
                 $streak = $habit->currentStreak();
                 $lines[] = '  • '.e($habit->name)." (🔥 {$streak} hari)";
             }
+        }
+
+        return $this->sendMessage(implode("\n", $lines), $chatId);
+    }
+
+    /**
+     * Format and send a due/upcoming Subscription commitment alert to Telegram.
+     */
+    public function sendSubscriptionDueAlert(Subscription $subscription, ?string $chatId = null): bool
+    {
+        $days = $subscription->daysUntilDue();
+
+        $dueBadge = match (true) {
+            $days < 0 => 'Lewat '.abs($days).' hari!',
+            $days === 0 => 'Hari Ini!',
+            $days === 1 => 'Esok (1 hari lagi)',
+            default => "{$days} hari lagi",
+        };
+
+        $cycleLabel = $subscription->billing_cycle === 'yearly' ? 'Tahunan' : 'Bulanan';
+        $walletName = $subscription->wallet !== null ? $subscription->wallet->name : 'Tiada dompet ditetapkan';
+        $autoRenewText = $subscription->auto_renew ? 'Ya (Auto-Debit)' : 'Tidak (Manual)';
+
+        $lines = [
+            '💳 <b>Peringatan Komitmen & Langganan (LifeOS)</b>',
+            '',
+            '📌 <b>'.e($subscription->name).'</b>',
+            '🏷 Kategori: <code>'.e(ucfirst($subscription->category)).'</code>',
+            '💰 Jumlah: <b>RM '.number_format((float) $subscription->amount, 2)." ({$cycleLabel})</b>",
+            '📅 Tarikh Bil: <b>'.$subscription->next_billing_date->format('d M Y')." ({$dueBadge})</b>",
+            '🏦 Dompet: '.e($walletName),
+            "🔄 Auto-Renew: {$autoRenewText}",
+        ];
+
+        if ($subscription->notes !== null && $subscription->notes !== '') {
+            $lines[] = '';
+            $lines[] = '📝 '.e($subscription->notes);
         }
 
         return $this->sendMessage(implode("\n", $lines), $chatId);
