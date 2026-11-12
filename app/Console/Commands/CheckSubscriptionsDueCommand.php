@@ -58,4 +58,3 @@ class CheckSubscriptionsDueCommand extends Command
         return self::SUCCESS;
     }
 }
-

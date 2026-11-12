@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -52,7 +53,7 @@ class MeetingReminder extends Model
     /**
      * Determine whether this reminder has entered its trigger window.
      */
-    public function isDue(?Carbon $now = null): bool
+    public function isDue(?CarbonInterface $now = null): bool
     {
         if ($this->is_sent) {
             return false;

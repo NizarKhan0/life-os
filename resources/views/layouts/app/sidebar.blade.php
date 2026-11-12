@@ -30,6 +30,9 @@
                     <flux:sidebar.item icon="credit-card" :href="route('subscriptions.index')" :current="request()->routeIs('subscriptions.*')" wire:navigate>
                         {{ __('Subscriptions') }}
                     </flux:sidebar.item>
+                    <flux:sidebar.item icon="light-bulb" :href="route('reviews.index')" :current="request()->routeIs('reviews.*')" wire:navigate>
+                        {{ __('Weekly Review') }}
+                    </flux:sidebar.item>
                 </flux:sidebar.group>
             </flux:sidebar.nav>
 

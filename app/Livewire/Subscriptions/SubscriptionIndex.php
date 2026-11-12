@@ -294,4 +294,3 @@ class SubscriptionIndex extends Component
         return view('livewire.subscriptions.subscription-index');
     }
 }
-

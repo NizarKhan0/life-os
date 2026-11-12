@@ -33,3 +33,7 @@ Schedule::command('money:check-budgets')
 Schedule::command('tasks:send-reminders')
     ->dailyAt('21:00')
     ->timezone('Asia/Kuala_Lumpur');
+
+Schedule::command('reviews:send-weekly-reminder')
+    ->weeklyOn(0, '20:00')
+    ->timezone('Asia/Kuala_Lumpur');

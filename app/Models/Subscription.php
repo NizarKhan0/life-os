@@ -105,4 +105,3 @@ class Subscription extends Model
         return round($amount, 2);
     }
 }
-

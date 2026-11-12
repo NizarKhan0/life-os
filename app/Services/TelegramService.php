@@ -262,4 +262,34 @@ class TelegramService
 
         return $this->sendMessage(implode("\n", $lines), $chatId);
     }
+
+    /**
+     * Send a weekly review reminder with automatic metrics snapshot.
+     *
+     * @param  array<string, int|float>  $snapshot
+     */
+    public function sendWeeklyReviewReminder(array $snapshot, int $unprocessedDumps = 0, ?string $chatId = null): bool
+    {
+        $lines = [
+            '🧠 <b>Masa Untuk Weekly Review (LifeOS)</b>',
+            '',
+            '📊 <b>Snapshot Minggu Ini:</b>',
+            '  ✅ Task siap: <b>'.($snapshot['tasks_completed'] ?? 0).'</b>',
+            '  ⏳ Task tertunggak: <b>'.($snapshot['tasks_pending'] ?? 0).'</b>',
+            '  🔥 Check-in habit: <b>'.($snapshot['habit_checkins'] ?? 0).'</b>',
+            '  📅 Mesyuarat: <b>'.($snapshot['meetings_held'] ?? 0).'</b>',
+            '  💸 Belanja: <b>RM '.number_format((float) ($snapshot['total_expense'] ?? 0), 2).'</b>',
+            '  💰 Pendapatan: <b>RM '.number_format((float) ($snapshot['total_income'] ?? 0), 2).'</b>',
+        ];
+
+        if ($unprocessedDumps > 0) {
+            $lines[] = '';
+            $lines[] = "🗒 Anda ada <b>{$unprocessedDumps} nota Brain Dump</b> yang belum diproses.";
+        }
+
+        $lines[] = '';
+        $lines[] = '✍️ Luangkan 10 minit untuk jawab 3 soalan refleksi: <i>Kemenangan, Cabaran, Penambahbaikan</i>.';
+
+        return $this->sendMessage(implode("\n", $lines), $chatId);
+    }
 }

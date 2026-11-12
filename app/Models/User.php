@@ -150,4 +150,24 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     {
         return $this->hasMany(Subscription::class);
     }
+
+    /**
+     * Get the user's weekly reviews.
+     *
+     * @return HasMany<WeeklyReview, $this>
+     */
+    public function weeklyReviews(): HasMany
+    {
+        return $this->hasMany(WeeklyReview::class);
+    }
+
+    /**
+     * Get the user's brain dump notes.
+     *
+     * @return HasMany<BrainDump, $this>
+     */
+    public function brainDumps(): HasMany
+    {
+        return $this->hasMany(BrainDump::class);
+    }
 }

@@ -3,6 +3,7 @@
 use App\Livewire\Goals\GoalIndex;
 use App\Livewire\Meetings\MeetingIndex;
 use App\Livewire\Money\MoneyIndex;
+use App\Livewire\Reviews\WeeklyReviewIndex;
 use App\Livewire\Subscriptions\SubscriptionIndex;
 use App\Livewire\Tasks\TaskHabitIndex;
 use Illuminate\Support\Facades\Route;
@@ -16,6 +17,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::livewire('money', MoneyIndex::class)->name('money.index');
     Route::livewire('tasks', TaskHabitIndex::class)->name('tasks.index');
     Route::livewire('subscriptions', SubscriptionIndex::class)->name('subscriptions.index');
+    Route::livewire('reviews', WeeklyReviewIndex::class)->name('reviews.index');
 });
 
 require __DIR__.'/settings.php';
