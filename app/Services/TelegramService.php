@@ -292,4 +292,12 @@ class TelegramService
 
         return $this->sendMessage(implode("\n", $lines), $chatId);
     }
+
+    /**
+     * Send a pre-formatted Morning Briefing report to Telegram.
+     */
+    public function sendMorningBriefing(string $briefingHtml, ?string $chatId = null): bool
+    {
+        return $this->sendMessage($briefingHtml, $chatId, 'HTML');
+    }
 }

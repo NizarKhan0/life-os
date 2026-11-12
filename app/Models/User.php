@@ -170,4 +170,14 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     {
         return $this->hasMany(BrainDump::class);
     }
+
+    /**
+     * Get the user's automation logs.
+     *
+     * @return HasMany<AutomationLog, $this>
+     */
+    public function automationLogs(): HasMany
+    {
+        return $this->hasMany(AutomationLog::class);
+    }
 }

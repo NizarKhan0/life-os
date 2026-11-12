@@ -33,6 +33,7 @@ class DatabaseSeeder extends Seeder
             TaskHabitSeeder::class,
             SubscriptionSeeder::class,
             ReviewSeeder::class,
+            AutomationSeeder::class,
         ]);
     }
 }
